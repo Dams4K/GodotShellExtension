@@ -1,21 +1,32 @@
 #include "register_types.h"
 
 #include <gdextension_interface.h>
+
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
+
+#include "gdshell.h"
+#include "gdshell_editor_plugin.h"
 
 using namespace godot;
 
 void initialize_gdshell_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		return;
 	}
+
+	GDREGISTER_INTERNAL_CLASS(GDShell);
+	GDREGISTER_INTERNAL_CLASS(GDShellEditorPlugin);
+
+	EditorPlugins::add_by_type<GDShellEditorPlugin>();
 }
 
 void uninitialize_gdshell_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		return;
 	}
+
+	EditorPlugins::remove_by_type<GDShellEditorPlugin>();
 }
 
 extern "C" {
