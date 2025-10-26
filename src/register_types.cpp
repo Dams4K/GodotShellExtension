@@ -5,20 +5,28 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "shell.h"
 #include "gdshell.h"
 #include "gdshell_editor_plugin.h"
 
 using namespace godot;
 
 void initialize_gdshell_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		return;
+	switch (p_level) {
+	case MODULE_INITIALIZATION_LEVEL_EDITOR:
+		GDREGISTER_INTERNAL_CLASS(GDShell);
+		GDREGISTER_INTERNAL_CLASS(GDShellEditorPlugin);
+
+		EditorPlugins::add_by_type<GDShellEditorPlugin>();
+		break;
+	
+	case MODULE_INITIALIZATION_LEVEL_SCENE:
+		GDREGISTER_CLASS(Shell);
+		break;
+	
+	default:
+		break;
 	}
-
-	GDREGISTER_INTERNAL_CLASS(GDShell);
-	GDREGISTER_INTERNAL_CLASS(GDShellEditorPlugin);
-
-	EditorPlugins::add_by_type<GDShellEditorPlugin>();
 }
 
 void uninitialize_gdshell_module(ModuleInitializationLevel p_level) {
