@@ -7,6 +7,8 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include <stdio.h>
+
 #define BUFFER_SIZE 4096
 
 using namespace godot;
@@ -16,14 +18,24 @@ void Shell::_bind_methods() {
 }
 
 void Shell::_slave() {
+    // print_line("_slave");
+    printf("_slvae\n");
     execlp("bash", "bash", "-i", NULL);
+    ERR_FAIL_COND_MSG(true, "exec failed");
+    exit(1);
 }
 
 void Shell::_master() {
+    shell_thread.instantiate();
+    shell_thread->start(callable_mp(this, &Shell::_shell_process));
+}
+
+void Shell::_shell_process() {
     char buffer[BUFFER_SIZE];
 
     while (true) {
         // -1 for the \0
+        ERR_FAIL_COND_EDMSG(master_fd == -1, "master_fd equal -1");
         ssize_t n = read(master_fd, buffer, sizeof(char)*(BUFFER_SIZE-1));
         if (n > 0) {
             buffer[n] = '\n';
@@ -32,16 +44,7 @@ void Shell::_master() {
     }
 
     close(master_fd);
-    waitpid(pid, NULL, 0);
-}
-
-void Shell::_shell_process() {
-    pid = forkpty(&master_fd, NULL, NULL, NULL);
-    if (pid == 0) {
-        _slave();
-    } else {
-        _master();
-    }
+    waitpid(pid, nullptr, 0);
 }
 
 void Shell::push_command(String command) {
@@ -56,8 +59,30 @@ void Shell::push_command(String command) {
 }
 
 void Shell::_ready() {
-    shell_thread.instantiate();
-    shell_thread->start(callable_mp(this, &Shell::_shell_process));
+    pid = fork();
+
+    if (pid == 0) {
+        printf("Slave\n");
+        exit(1);
+    } else {
+        printf("Master\n");
+    }
+
+    // pid = forkpty(&master_fd, nullptr, nullptr, nullptr);
+    // ERR_FAIL_COND_EDMSG(pid == -1, "forkpty failed: " + String::num_int64(errno));
+    // print_line("master: " + String::num_int64(master_fd));
+    // if (master_fd == -1) {
+    //     print_error("ERROR");
+    //     print_error("master_fd = " + String::num_int64(master_fd));
+    //     print_error("errno: " + String::num_int64(errno));
+    // }
+    // // ERR_FAIL_COND_EDMSG(master_fd == -1, "master_fd equal -1");
+
+    // if (pid == 0) {
+    //     _slave();
+    // } else {
+    //     // _master();
+    // }
 }
 
 void Shell::_notification(int p_what) {
